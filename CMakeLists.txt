@@ -5,6 +5,8 @@ find_package(Boost 1.40 COMPONENTS system filesystem REQUIRED)
 include_directories(${Boost_INCLUDE_DIRS})
 
 set(SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 add_definitions(-DHAVE_CONFIG_H)
@@ -66,5 +68,3 @@ target_include_directories(rcssserver PUBLIC ${SOURCE_DIR})
 target_link_libraries(rcssconfparser ${Boost_LIBRARIES})
 target_link_libraries(rcssconfparser z)
 target_link_libraries(rcssserver ${Boost_LIBRARIES} rcssconfparser rcssgz rcssnet rcssclangparser)
-
-# add_executable(rcssclient ${CMAKE_CURRENT_SOURCE_DIR}/src)
