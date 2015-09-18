@@ -2524,13 +2524,14 @@ bool
 Stadium::doSendThink()
 {
     const char * think_command = "(think)";
-    const double max_msec_waited = 25 * 50;
+    const double max_msec_waited = 25 * 5000;
     const int max_cycles_missed = 20;
 
     static int cycles_missed = 0; //number of cycles where someone missed
 
     bool shutdown = false;
     timeval tv_start, tv_now;
+    timeval tv_lastNotification;
 
     if ( time() <= 0 )
     {
@@ -2636,6 +2637,44 @@ Stadium::doSendThink()
         {
             done = DS_FALSE;
         }
+
+        // Start modifcation to prevent timeouts
+        // get time difference with start of loop, first get time difference in seconds
+        gettimeofday( &tv_now, NULL );
+        double time_diff_notification
+            = ( static_cast< double >( tv_now.tv_sec )
+                + static_cast< double >( tv_now.tv_usec ) / 1000000 )
+            - ( static_cast< double >( tv_lastNotification.tv_sec )
+                + static_cast< double >( tv_lastNotification.tv_usec ) / 1000000 );
+
+        if ((done == DS_FALSE) && (time_diff_notification > 1.0))  {
+          const char *aliveMsg = "(ok say)";
+          for ( int i = 0; i < MAX_PLAYER*2; ++i ) {
+            if ( wait_players[i] && M_players[i]->connected() && M_players[i]->doneReceived()) {
+              M_players[i]->send( aliveMsg );
+            }
+          }
+
+          for ( int i = 0; i < 2; ++i ) {
+            if ( wait_coach[i] && M_olcoaches[i]->connected() && M_olcoaches[i]->doneReceived()) {
+              M_olcoaches[i]->send( aliveMsg );
+            }
+          }
+
+          if ( wait_trainer && M_coach->connected() && M_coach->doneReceived()) {
+            M_coach->send( aliveMsg );
+          }
+
+          for ( MonitorCont::iterator i = M_monitors.begin();
+                i != M_monitors.end();
+                ++i )
+          {
+            (*i)->sendShow();
+          }
+          gettimeofday( &tv_lastNotification, NULL );
+
+        }
+        // end modification to prevent timeouts
 
         // get time differnce with start of loop, first get time difference in
         // seconds, then multiply with 1000 to get msec.
