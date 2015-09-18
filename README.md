@@ -5,7 +5,7 @@ The RoboCup-2D Soccer Simulator is a research and educational tool for multi-age
 
 ## Install ##
 ```sh
-mkdir build
-cd build
+mkdir build && cd build
 cmake ..
-make```
+make
+```
