@@ -1,7 +1,7 @@
 cmake_minimum_required (VERSION 2.6)
 project(rcssserver)
 
-find_package(Boost 1.40 COMPONENTS system filesystem REQUIRED)
+find_package(Boost COMPONENTS system filesystem REQUIRED)
 include_directories(${Boost_INCLUDE_DIRS})
 
 set(SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src)
