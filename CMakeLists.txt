@@ -3,6 +3,7 @@ project(rcssserver)
 
 find_package(Boost COMPONENTS system filesystem REQUIRED)
 find_package(Zlib REQUIRED)
+find_package(Flex REQUIRED)
 
 include_directories(${Boost_INCLUDE_DIRS})
 
@@ -23,7 +24,7 @@ set(LANGPARSER_CPP clangbuilder.cpp clangmsgbuilder.cpp
   clangunsuppmsg.cpp clangrulemsg.cpp clangdelmsg.cpp clanginfomsg.cpp
   clangadvicemsg.cpp clangdefmsg.cpp clangaction.cpp clangutil.cpp
   coach_lang_comp.cpp arithop.cpp cond.cpp compop.cpp region.cpp
-  rule.cpp rcssexceptions.cpp coach_lang_tok.cpp coach_lang_parser.cpp)
+  rule.cpp rcssexceptions.cpp coach_lang_parser.cpp)
 foreach(src ${LANGPARSER_CPP})
   list(APPEND LANGPARSER_SOURCES ${SOURCE_DIR}/${src})
 endforeach(src ${LANGPARSER_CPP})
@@ -48,17 +49,26 @@ set(RCSSSERVER_CPP audio.cpp bodysender.cpp coach.cpp csvsaver.cpp
   serializerplayerstdv13.cpp serializerplayerstdv14.cpp
   serverparam.cpp stadium.cpp stdoutsaver.cpp stdtimer.cpp
   synctimer.cpp team.cpp utility.cpp visualsendercoach.cpp
-  visualsenderplayer.cpp weather.cpp xmlreader.cpp xpmholder.cpp player_command_tok.cpp player_command_parser.cpp)
+  visualsenderplayer.cpp weather.cpp xmlreader.cpp xpmholder.cpp player_command_parser.cpp)
 foreach(src ${RCSSSERVER_CPP})
   list(APPEND RCSSSERVER_SOURCES ${SOURCE_DIR}/${src})
 endforeach(src ${RCSSSERVER_CPP})
 
-# MESSAGE(STATUS "CONF_SOURCES " ${LANGPARSER_CPP})
+FLEX_TARGET(coach_lang_tok ${SOURCE_DIR}/coach_lang_tok.lpp ${CMAKE_BINARY_DIR}/coach_lang_tok_lex.yy.c)
+SET(awk_cmd awk '/\#include <FlexLexer\.h>/ { print \"\#include \\\"coach_lang_tok.h\\\"\"$<SEMICOLON> getline$<SEMICOLON> } /class istream$<SEMICOLON>/ { print \"\#include <iosfwd>\"$<SEMICOLON> print \"using namespace std$<SEMICOLON>\"$<SEMICOLON> getline$<SEMICOLON> } /\#include <iostream\.h>/ { print \"\#include <iostream>\"$<SEMICOLON> getline$<SEMICOLON> } { gsub( \"lex\\.yy\\.c\", \"coach_lang_tok.cpp\" )$<SEMICOLON> print$<SEMICOLON> }' ${FLEX_coach_lang_tok_OUTPUTS} > ${CMAKE_BINARY_DIR}/coach_lang_tok.cpp)
+separate_arguments(awk_cmd)
+add_custom_command(OUTPUT ${CMAKE_BINARY_DIR}/coach_lang_tok.cpp DEPENDS ${FLEX_coach_lang_tok_OUTPUTS} COMMAND ${awk_cmd})
+
+FLEX_TARGET(player_command_tok ${SOURCE_DIR}/player_command_tok.lpp ${CMAKE_BINARY_DIR}/player_command_tok_lex.yy.c)
+SET(awk_cmd awk '/\#include <FlexLexer\.h>/ { print \"\#include \\\"player_command_tok.h\\\"\"$<SEMICOLON> getline$<SEMICOLON> } /class istream$<SEMICOLON>/ { print \"\#include <iosfwd>\"$<SEMICOLON> print \"using namespace std$<SEMICOLON>\"$<SEMICOLON> getline$<SEMICOLON> } /\#include <iostream\.h>/ { print \"\#include <iostream>\"$<SEMICOLON> getline$<SEMICOLON> } { gsub( \"lex\\.yy\\.c\", \"player_command_tok.cpp\" )$<SEMICOLON> print$<SEMICOLON> }' ${FLEX_player_command_tok_OUTPUTS} > ${CMAKE_BINARY_DIR}/player_command_tok.cpp)
+separate_arguments(awk_cmd)
+add_custom_command(OUTPUT ${CMAKE_BINARY_DIR}/player_command_tok.cpp DEPENDS ${FLEX_player_command_tok_OUTPUTS} COMMAND ${awk_cmd})
+
 add_library(rcssconfparser SHARED ${BASE_CONF_SOURCES})
 add_library(rcssgz SHARED ${BASE_GZIP_SOURCES})
 add_library(rcssnet SHARED ${BASE_NET_SOURCES})
-add_library(rcssclangparser SHARED ${LANGPARSER_SOURCES})
-add_executable(rcssserver ${RCSSSERVER_SOURCES})
+add_library(rcssclangparser SHARED ${CMAKE_BINARY_DIR}/coach_lang_tok.cpp ${LANGPARSER_SOURCES})
+add_executable(rcssserver ${RCSSSERVER_SOURCES} ${CMAKE_BINARY_DIR}/coach_lang_tok.cpp ${CMAKE_BINARY_DIR}/player_command_tok.cpp)
 add_dependencies(rcssserver rcssconfparser rcssgz rcssclangparser)
 
 target_include_directories(rcssconfparser PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/rcssbase/conf)
@@ -68,5 +78,6 @@ target_include_directories(rcssclangparser PUBLIC ${SOURCE_DIR})
 target_include_directories(rcssserver PUBLIC ${SOURCE_DIR})
 
 target_link_libraries(rcssconfparser ${Boost_LIBRARIES})
-target_link_libraries(rcssconfparser ${ZLIB_LIBRARIES})
+target_link_libraries(rcssclangparser ${Boost_LIBRARIES})
+target_link_libraries(rcssgz ${ZLIB_LIBRARIES})
 target_link_libraries(rcssserver ${Boost_LIBRARIES} rcssconfparser rcssgz rcssnet rcssclangparser)
