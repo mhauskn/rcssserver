@@ -2,6 +2,8 @@ cmake_minimum_required (VERSION 2.6)
 project(rcssserver)
 
 find_package(Boost COMPONENTS system filesystem REQUIRED)
+find_package(Zlib REQUIRED)
+
 include_directories(${Boost_INCLUDE_DIRS})
 
 set(SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src)
@@ -66,5 +68,5 @@ target_include_directories(rcssclangparser PUBLIC ${SOURCE_DIR})
 target_include_directories(rcssserver PUBLIC ${SOURCE_DIR})
 
 target_link_libraries(rcssconfparser ${Boost_LIBRARIES})
-target_link_libraries(rcssconfparser z)
+target_link_libraries(rcssconfparser ${ZLIB_LIBRARIES})
 target_link_libraries(rcssserver ${Boost_LIBRARIES} rcssconfparser rcssgz rcssnet rcssclangparser)
