@@ -2,8 +2,8 @@ cmake_minimum_required (VERSION 2.6)
 project(rcssserver)
 
 find_package(Boost COMPONENTS system filesystem REQUIRED)
-find_package(Zlib REQUIRED)
-find_package(Flex REQUIRED)
+find_package(ZLIB REQUIRED)
+find_package(FLEX REQUIRED)
 
 include_directories(${Boost_INCLUDE_DIRS})
 
