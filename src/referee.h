@@ -672,6 +672,40 @@ private:
 
 /*--------------------------------------------------------*/
 
+class HFORef
+    : public Referee {
+private:
+    static const char * trainingMsg;
+    static const int TURNOVER_TIME;
+    int M_episode;
+    int M_keepers, M_takers;
+    int M_time;
+    int M_take_time;
+public:
+    HFORef( Stadium & stadium );
+
+    virtual
+    ~HFORef()
+      { }
+
+    virtual
+    void analyse();
+
+    virtual
+    void playModeChange( PlayMode pm );
+
+private:
+    bool ballInHFOArea();
+
+    void logHeader();
+
+    void logEpisode( const char *endCond );
+
+    void resetField();
+};
+
+/*--------------------------------------------------------*/
+
 class PenaltyRef
     : public Referee {
 private:
