@@ -254,6 +254,16 @@ const std::string ServerParam::KAWAY_LOG_FIXED_NAME = "rcssserver";
 const int ServerParam::KAWAY_LOG_FIXED = false;
 const int ServerParam::KAWAY_LOG_DATED = true;
 
+const int ServerParam::HFO_LOGGING = true;
+#ifdef RCSS_WIN
+const std::string ServerParam::HFO_LOG_DIR = ".\\";
+#else
+const std::string ServerParam::HFO_LOG_DIR = "./";
+#endif
+const std::string ServerParam::HFO_LOG_FIXED_NAME = "rcssserver";
+const int ServerParam::HFO_LOG_FIXED = false;
+const int ServerParam::HFO_LOG_DATED = true;
+
 const int ServerParam::KAWAY_START = -1;
 
 const int ServerParam::POINT_TO_BAN = 5;
@@ -831,9 +841,18 @@ ServerParam::addParams()
     addParam( "keepaway_log_dated", M_keepaway_log_dated, "", 9 );
 
     addParam( "keepaway_start", M_keepaway_start, "", 9 );
+
     addParam( "hfo", M_hfo, "", 9 );
     addParam( "hfo_max_trial_time", M_hfo_max_trial_time, "", 9 );
     addParam( "hfo_max_untouched_time", M_hfo_max_untouched_time, "", 9 );
+    addParam( "hfo_logging", M_hfo_logging, "", 9 );
+    addParam( "hfo_log_dir",
+              rcss::conf::makeSetter( this, &ServerParam::setHFOLogDir ),
+              rcss::conf::makeGetter( M_hfo_log_dir ),
+              "", 9 );
+    addParam( "hfo_log_fixed_name", M_hfo_log_fixed_name, "", 9 );
+    addParam( "hfo_log_fixed", M_hfo_log_fixed, "", 9 );
+    addParam( "hfo_log_dated", M_hfo_log_dated, "", 9 );
 
     addParam( "nr_normal_halfs",
               rcss::conf::makeSetter( this, &ServerParam::setNrNormalHalfs ),
@@ -1082,6 +1101,12 @@ ServerParam::setKAwayLogDir( std::string str )
 }
 
 void
+ServerParam::setHFOLogDir( std::string str )
+{
+    M_hfo_log_dir = tildeExpand( str );
+}
+
+void
 ServerParam::setCoachMsgFile( std::string str )
 {
     M_coach_msg_file = tildeExpand( str );
@@ -1180,7 +1205,7 @@ ServerParam::setDefaults()
     M_keepaway_width = KEEPAWAY_WIDTH;
 
     M_hfo = false;
-    M_hfo_max_trial_time = ?;
+    M_hfo_max_trial_time = 1000;
     M_hfo_max_untouched_time = 100;
 
     M_corner_kick_margin = CORNER_KICK_MARGIN;
@@ -1300,6 +1325,12 @@ ServerParam::setDefaults()
     M_keepaway_log_fixed_name = KAWAY_LOG_FIXED_NAME;
     M_keepaway_log_fixed = KAWAY_LOG_FIXED;
     M_keepaway_log_dated = KAWAY_LOG_DATED;
+
+    M_hfo_logging = HFO_LOGGING;
+    M_hfo_log_dir = HFO_LOG_DIR;
+    M_hfo_log_fixed_name = HFO_LOG_FIXED_NAME;
+    M_hfo_log_fixed = HFO_LOG_FIXED;
+    M_hfo_log_dated = HFO_LOG_DATED;
 
     M_keepaway_start = KAWAY_START;
 

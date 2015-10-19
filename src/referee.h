@@ -686,6 +686,7 @@ private:
     int M_take_time;
     PVector M_prev_ball_pos;
     int M_untouched_time;
+    int M_episode_over_time;
 public:
     HFORef( Stadium & stadium );
 
@@ -699,8 +700,11 @@ public:
     virtual
     void playModeChange( PlayMode pm );
 
+    virtual
+    void ballCaught( const Player & catcher );
+
 private:
-    bool ballInHFOArea();
+    bool inHFOArea(const PVector& pos);
 
     void logHeader();
 

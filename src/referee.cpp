@@ -44,7 +44,7 @@ const int CLEAR_PLAYER_TIME = 5;
 }
 
 const char * KeepawayRef::trainingMsg = "training Keepaway 1";
-const int KeepawayRef::TURNOVER_TIME = 4;
+const int KeepawayRef::TURNOVER_TIME = 2;
 
 const char * HFORef::oobMsg = "OUT_OF_BOUNDS";
 const char * HFORef::capturedMsg = "CAPTURED_BY_DEFENSE";
@@ -486,6 +486,11 @@ Referee::crossGoalLine( const Side side,
 void
 TimeRef::analyse()
 {
+    if ( ServerParam::instance().hfoMode() )
+    {
+        return;
+    }
+
     static int s_half_time_count = 0;
 
     const PlayMode pm = M_stadium.playmode();
@@ -937,6 +942,11 @@ Referee::checkFoul( const Player & tackler,
 void
 BallStuckRef::analyse()
 {
+    if ( ServerParam::instance().hfoMode() )
+    {
+        return;
+    }
+
     if ( ServerParam::instance().ballStuckArea() <= 0.0
          || ServerParam::instance().dropTime() <= 0 )
     {
@@ -1037,6 +1047,11 @@ OffsideRef::ballTouched( const Player & player )
 void
 OffsideRef::analyse()
 {
+    if ( ServerParam::instance().hfoMode() )
+    {
+        return;
+    }
+
     if ( ! ServerParam::instance().useOffside() )
     {
         return;
@@ -1291,6 +1306,11 @@ OffsideRef::setOffsideMark( const Player & kicker )
 void
 OffsideRef::callOffside()
 {
+    if ( ServerParam::instance().hfoMode() )
+    {
+        return;
+    }
+
     if ( isPenaltyShootOut( M_stadium.playmode() ) )
     {
         return;
@@ -1569,6 +1589,11 @@ FreeKickRef::ballTouched( const Player & player )
 void
 FreeKickRef::analyse()
 {
+    if ( ServerParam::instance().hfoMode() )
+    {
+        return;
+    }
+
     const PlayMode pm = M_stadium.playmode();
 
     if ( isPenaltyShootOut( pm ) )
@@ -1927,6 +1952,11 @@ const int TouchRef::AFTER_GOAL_WAIT = 50;
 void
 TouchRef::analyse()
 {
+    if ( ServerParam::instance().hfoMode() )
+    {
+        return;
+    }
+
     analyseImpl();
 
     M_prev_ball_pos = M_stadium.ball().pos();
@@ -2299,6 +2329,11 @@ CatchRef::ballTouched( const Player & player )
 void
 CatchRef::ballCaught( const Player & catcher )
 {
+    if ( ServerParam::instance().hfoMode() )
+    {
+        return;
+    }
+
     if ( isPenaltyShootOut( M_stadium.playmode() ) )
     {
         return;
@@ -2404,6 +2439,11 @@ CatchRef::ballPunched( const Player & catcher )
 void
 CatchRef::analyse()
 {
+    if ( ServerParam::instance().hfoMode() )
+    {
+        return;
+    }
+
     const PlayMode pm = M_stadium.playmode();
 
     M_team_l_touched = false;
@@ -2576,6 +2616,11 @@ void
 FoulRef::tackleTaken( const Player & tackler,
                       const bool foul )
 {
+    if ( ServerParam::instance().hfoMode() )
+    {
+        return;
+    }
+
     if ( isPenaltyShootOut( M_stadium.playmode() ) )
     {
         return;
@@ -2604,6 +2649,11 @@ FoulRef::tackleTaken( const Player & tackler,
 void
 FoulRef::analyse()
 {
+    if ( ServerParam::instance().hfoMode() )
+    {
+        return;
+    }
+
     const PlayMode pm = M_stadium.playmode();
 
     if ( isPenaltyShootOut( pm ) )
@@ -2947,8 +2997,7 @@ HFORef::HFORef( Stadium & stadium )
       M_take_time( 0 ),
       M_prev_ball_pos( 0.0, 0.0 ),
       M_untouched_time( 0 ),
-      M_max_untouched_time ( 0 ),
-      M_max_trial_time( 0 )
+      M_episode_over_time( -1 )
 {
 
 }
@@ -2956,47 +3005,53 @@ HFORef::HFORef( Stadium & stadium )
 void
 HFORef::analyse()
 {
-    if ( ! ServerParam::instance().HFOMode() )
+    if ( ! ServerParam::instance().hfoMode() )
     {
         return;
     }
 
-    static time_t s_start_time = std::time( NULL );
+    // Resets the episode after waiting for one frame
+    if ( M_episode_over_time > 0 )
+    {
+      if ( M_stadium.time() - M_episode_over_time >= 1 ) {
+        M_stadium.changePlayMode( PM_BeforeKickOff );
+        M_stadium.changePlayMode( PM_PlayOn );
+        M_episode_over_time = -1;
+      }
+      return;
+    }
 
     if ( M_stadium.playmode() == PM_PlayOn )
     {
-        if ( ! ballInHFOArea() )
+        if ( crossGoalLine( RIGHT, M_prev_ball_pos ) )
+        {
+            logEpisode( goalMsg );
+            M_stadium.sendRefereeAudio( goalMsg );
+            M_episode_over_time = M_stadium.time();
+        }
+        else if ( ! inHFOArea(M_prev_ball_pos) )
         {
             logEpisode( oobMsg );
             M_stadium.sendRefereeAudio( oobMsg );
-            resetField();
+            M_episode_over_time = M_stadium.time();
         }
         else if ( M_take_time >= TURNOVER_TIME )
         {
             logEpisode( capturedMsg );
             M_stadium.sendRefereeAudio( capturedMsg );
-            resetField();
-        }
-        else if ( ( ! M_stadium.ballCatcher()
-                || M_stadium.ballCatcher()->side() == RIGHT )
-              && crossGoalLine( RIGHT, M_prev_ball_pos )
-              && ! isPenaltyShootOut( M_stadium.playmode() )  )
-        {
-            logEpisode( goalMsg );
-            M_stadium.sendRefereeAudio( goalMsg );
-            resetField();
+            M_episode_over_time = M_stadium.time();
         }
         else if ( M_untouched_time > ServerParam::instance().hfoMaxUntouchedTime() ||
                   M_stadium.time() - M_time >  ServerParam::instance().hfoMaxTrialTime())
         {
             logEpisode( ootMsg );
             M_stadium.sendRefereeAudio( ootMsg );
-            resetField();
+            M_episode_over_time = M_stadium.time();
         }
         else
         {
             M_untouched_time++;
-            bool keeper_poss = false;
+            bool offense_poss = false;
 
             const Stadium::PlayerCont::const_iterator end = M_stadium.players().end();
             for ( Stadium::PlayerCont::const_iterator p = M_stadium.players().begin();
@@ -3013,27 +3068,20 @@ HFORef::analyse()
                     M_untouched_time = 0;
                     if ( (*p)->side() == LEFT )
                     {
-                        keeper_poss = true;
+                        offense_poss = true;
                     }
                     else if ( (*p)->side() == RIGHT )
                     {
-                        keeper_poss = false;
+                        offense_poss = false;
                         ++M_take_time;
                         break;
                     }
                 }
             }
-            if ( keeper_poss )
+            if ( offense_poss )
             {
                 M_take_time = 0;
             }
-        }
-    }
-    else if ( ServerParam::instance().kawayStart() >= 0 )
-    {
-        if ( difftime( std::time( NULL ), s_start_time ) > ServerParam::instance().kawayStart() )
-        {
-            M_stadium.changePlayMode( PM_PlayOn );
         }
     }
     M_prev_ball_pos = M_stadium.ball().pos();
@@ -3042,62 +3090,58 @@ HFORef::analyse()
 void
 HFORef::playModeChange( PlayMode pm )
 {
-    if ( ServerParam::instance().HFOMode() )
+    if ( ServerParam::instance().hfoMode() )
     {
-        if ( pm == PM_PlayOn && M_episode == 0 )
+      if ( pm == PM_PlayOn )
+      {
+        if ( M_episode == 0 )
         {
-            M_episode = 1;
+          const Stadium::PlayerCont::const_iterator end = M_stadium.players().end();
+          for ( Stadium::PlayerCont::const_iterator p = M_stadium.players().begin();
+                p != end;
+                ++p )
+          {
+            if ( ! (*p)->isEnabled() ) continue;
 
-            const Stadium::PlayerCont::const_iterator end = M_stadium.players().end();
-            for ( Stadium::PlayerCont::const_iterator p = M_stadium.players().begin();
-                  p != end;
-                  ++p )
+            if ( (*p)->side() == LEFT )
             {
-                if ( ! (*p)->isEnabled() ) continue;
-
-                if ( (*p)->side() == LEFT )
-                {
-                    ++M_offense;
-                }
-                else if ( (*p)->side() == RIGHT )
-                {
-                    ++M_defense;
-                }
+              ++M_offense;
             }
-
-            logHeader();
-            resetField();
+            else if ( (*p)->side() == RIGHT )
+            {
+              ++M_defense;
+            }
+          }
+          logHeader();
         }
+        M_episode++;
+        resetField();
+      }
     }
 }
 
 bool
-HFORef::ballInHFOArea()
+HFORef::inHFOArea(const PVector& pos)
 {
-    PVector ball_pos = M_stadium.ball().pos();
-    return ( ball_pos.x >= -0.1 &&
-             ball_pos.x <= 0.5 * ServerParam::instance().PITCH_LENGTH &&
-             std::fabs( ball_pos.y ) <= 0.5 * ServerParam::instance().PITCH_WIDTH);
+    return ( pos.x >= 0 &&
+             pos.x <= 0.5 * ServerParam::instance().PITCH_LENGTH &&
+             std::fabs( pos.y ) <= 0.5 * ServerParam::instance().PITCH_WIDTH);
 }
 
 void
 HFORef::logHeader()
 {
-    if ( M_stadium.logger().kawayLog() )
+    if ( M_stadium.logger().hfoLog() )
     {
-        M_stadium.logger().kawayLog()
+        M_stadium.logger().hfoLog()
             << "# Offense: " << M_offense << '\n'
             << "# Defense:  " << M_defense << '\n'
-            << "# Region:  " << ServerParam::instance().keepAwayLength()
-            << " x " << ServerParam::instance().keepAwayWidth()
-            << '\n'
-            << "#\n"
             << "# Description of Fields:\n"
             << "# 1) Episode number\n"
             << "# 2) Start time in simulator steps (100ms)\n"
             << "# 3) End time in simulator steps (100ms)\n"
             << "# 4) Duration in simulator steps (100ms)\n"
-            << "# 5) (o)ut of bounds / (t)aken away\n"
+            << "# 5) Episode result\n"
             << "#\n"
             << std::flush;
     }
@@ -3106,17 +3150,15 @@ HFORef::logHeader()
 void
 HFORef::logEpisode( const char * endCond )
 {
-    if ( M_stadium.logger().kawayLog() )
+    if ( M_stadium.logger().hfoLog() )
     {
-        M_stadium.logger().kawayLog() << M_episode++ << "\t"
-                                      << M_time << "\t"
-                                      << M_stadium.time() << "\t"
-                                      << M_stadium.time() - M_time << "\t"
-                                      << endCond
-                                      << std::endl;
+        M_stadium.logger().hfoLog() << M_episode++ << "\t"
+                                    << M_time << "\t"
+                                    << M_stadium.time() << "\t"
+                                    << M_stadium.time() - M_time << "\t"
+                                    << endCond
+                                    << std::endl;
     }
-
-    M_time = M_stadium.time();
 }
 
 void
@@ -3127,6 +3169,7 @@ HFORef::resetField()
     double ball_x = drand(.2 * -.1 + .05 * pitch_length, .15 * pitch_length);
     double ball_y = drand(-.4 * pitch_width, .4 * pitch_width);
     M_stadium.placeBall( NEUTRAL, PVector(ball_x, ball_y) );
+    M_prev_ball_pos = M_stadium.ball().pos();
     int offense_pos = 0;
     float offset_x[10] = {-1, -1, 1, 1, 0, 0, -2, -2, 2, 2};
     float offset_y[10] = {-1, 1, 1, -1, 2, -2, -2, 2, 2, -2};
@@ -3153,15 +3196,24 @@ HFORef::resetField()
                 y = 0;
             } else {
                 x = drand(.25 * pitch_length, .375 * pitch_length);
-                y = drand(-.8 * pitch_width, .8 * pitch_width);
+                y = drand(-.4 * pitch_width, .4 * pitch_width);
             }
             (*p)->place( PVector( x, y ) );
         }
     }
     M_stadium.recoveryPlayers();
     M_take_time = 0;
+    M_untouched_time = 0;
+    M_time = M_stadium.time();
 }
 
+void
+HFORef::ballCaught( const Player & catcher )
+{
+    logEpisode( capturedMsg );
+    M_stadium.sendRefereeAudio( capturedMsg );
+    M_episode_over_time = M_stadium.time();
+}
 
 //************
 // PenaltyRef
@@ -3183,6 +3235,11 @@ PenaltyRef::PenaltyRef( Stadium& stadium )
 void
 PenaltyRef::analyse()
 {
+    if ( ServerParam::instance().hfoMode() )
+    {
+        return;
+    }
+
     startPenaltyShootout();
     analyseImpl();
 
@@ -3480,6 +3537,11 @@ PenaltyRef::handleTimer( const bool left_move_check,
 void
 PenaltyRef::ballCaught( const Player & catcher )
 {
+    if ( ServerParam::instance().hfoMode() )
+    {
+        return;
+    }
+
     if ( ! isPenaltyShootOut( M_stadium.playmode() ) )
     {
         return;

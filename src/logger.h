@@ -56,6 +56,8 @@ private:
     static const std::string DEF_GAME_SUFFIX;
     static const std::string DEF_KAWAY_NAME;
     static const std::string DEF_KAWAY_SUFFIX;
+    static const std::string DEF_HFO_NAME;
+    static const std::string DEF_HFO_SUFFIX;
 
     rcss::InitObserverLogger * M_init_observer;
     rcss::ObserverLogger * M_observer;
@@ -65,10 +67,12 @@ private:
     std::string M_game_log_name;
     std::string M_text_log_name;
     std::string M_kaway_log_name;
+    std::string M_hfo_log_name;
 
     std::ostream * M_game_log;
     std::ostream * M_text_log;
     std::ofstream M_kaway_log;  //!< file for keepaway log
+    std::ofstream M_hfo_log;  //!< file for keepaway log
 
 
     PlayMode M_playmode;
@@ -93,10 +97,12 @@ private:
     bool openGameLog();
     bool openTextLog();
     bool openKawayLog();
+    bool openHFOLog();
 
     void closeGameLog();
     void closeTextLog();
     void closeKawayLog();
+    void closeHFOLog();
 
     void renameLogs();
 
@@ -117,11 +123,17 @@ public:
           return M_kaway_log;
       }
 
+    std::ostream & hfoLog()
+      {
+          return M_hfo_log;
+      }
+
     void flush()
       {
           if ( M_game_log ) M_game_log->flush();
           if ( M_text_log ) M_text_log->flush();
           M_kaway_log.flush();
+          M_hfo_log.flush();
       }
 
     void writeToGameLog( const char * str,
