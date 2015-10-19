@@ -675,12 +675,17 @@ private:
 class HFORef
     : public Referee {
 private:
-    static const char * trainingMsg;
+    static const char * oobMsg;
+    static const char * capturedMsg;
+    static const char * goalMsg;
+    static const char * ootMsg;
     static const int TURNOVER_TIME;
     int M_episode;
-    int M_keepers, M_takers;
+    int M_offense, M_defense;
     int M_time;
     int M_take_time;
+    PVector M_prev_ball_pos;
+    int M_untouched_time;
 public:
     HFORef( Stadium & stadium );
 

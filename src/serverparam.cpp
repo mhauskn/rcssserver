@@ -831,6 +831,9 @@ ServerParam::addParams()
     addParam( "keepaway_log_dated", M_keepaway_log_dated, "", 9 );
 
     addParam( "keepaway_start", M_keepaway_start, "", 9 );
+    addParam( "hfo", M_hfo, "", 9 );
+    addParam( "hfo_max_trial_time", M_hfo_max_trial_time, "", 9 );
+    addParam( "hfo_max_untouched_time", M_hfo_max_untouched_time, "", 9 );
 
     addParam( "nr_normal_halfs",
               rcss::conf::makeSetter( this, &ServerParam::setNrNormalHalfs ),
@@ -1175,6 +1178,10 @@ ServerParam::setDefaults()
     M_keepaway = false;
     M_keepaway_length = KEEPAWAY_LENGTH;
     M_keepaway_width = KEEPAWAY_WIDTH;
+
+    M_hfo = false;
+    M_hfo_max_trial_time = ?;
+    M_hfo_max_untouched_time = 100;
 
     M_corner_kick_margin = CORNER_KICK_MARGIN;
     M_offside_active_area_size = OFFSIDE_ACTIVE_AREA_SIZE;

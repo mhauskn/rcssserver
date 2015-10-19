@@ -413,6 +413,9 @@ private:
     double M_keepaway_width; /* keepaway region width */
     double M_corner_kick_margin; /* corner kick margin */
     double M_offside_active_area_size; /* offside active area size */
+    bool M_hfo; /* HFO mode on/off */
+    int M_hfo_max_trial_time; /* Max time an HFO trial can last */
+    int M_hfo_max_untouched_time; /* Max time ball can go untouched in HFO */
     int M_port; /* port number */
     int M_coach_port; /* coach port number */
     int M_olcoach_port; /* online coach port number */
@@ -742,6 +745,10 @@ public:
     bool keepAwayMode() const { return M_keepaway; }
     double keepAwayLength() const { return M_keepaway_length; }
     double keepAwayWidth() const { return M_keepaway_width; }
+
+    bool HFOMode() const { return M_hfo; }
+    int hfoMaxTrialTime const { return M_hfo_max_trial_time; }
+    int hfoMaxUntouchedTime const { return M_hfo_max_untouched_time; }
 
     double cornerKickMargin() const { return M_corner_kick_margin; }
     double offsideActiveArea() const { return M_offside_active_area_size; }

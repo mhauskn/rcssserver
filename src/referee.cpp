@@ -46,8 +46,11 @@ const int CLEAR_PLAYER_TIME = 5;
 const char * KeepawayRef::trainingMsg = "training Keepaway 1";
 const int KeepawayRef::TURNOVER_TIME = 4;
 
-const char * HFORef::trainingMsg = "training HFO 1";
-const int HFORef::TURNOVER_TIME = 4;
+const char * HFORef::oobMsg = "OUT_OF_BOUNDS";
+const char * HFORef::capturedMsg = "CAPTURED_BY_DEFENSE";
+const char * HFORef::goalMsg = "GOAL";
+const char * HFORef::ootMsg = "OUT_OF_TIME";
+const int HFORef::TURNOVER_TIME = 2;
 
 PVector
 Referee::truncateToPitch( PVector ball_pos )
@@ -2938,10 +2941,14 @@ KeepawayRef::resetField()
 HFORef::HFORef( Stadium & stadium )
     : Referee( stadium ),
       M_episode( 0 ),
-      M_keepers( 0 ),
-      M_takers( 0 ),
+      M_offense( 0 ),
+      M_defense( 0 ),
       M_time( 0 ),
-      M_take_time( 0 )
+      M_take_time( 0 ),
+      M_prev_ball_pos( 0.0, 0.0 ),
+      M_untouched_time( 0 ),
+      M_max_untouched_time ( 0 ),
+      M_max_trial_time( 0 )
 {
 
 }
@@ -2949,7 +2956,7 @@ HFORef::HFORef( Stadium & stadium )
 void
 HFORef::analyse()
 {
-    if ( ! ServerParam::instance().keepAwayMode() )
+    if ( ! ServerParam::instance().HFOMode() )
     {
         return;
     }
@@ -2960,18 +2967,35 @@ HFORef::analyse()
     {
         if ( ! ballInHFOArea() )
         {
-            logEpisode( "o" );
-            M_stadium.sendRefereeAudio( trainingMsg );
+            logEpisode( oobMsg );
+            M_stadium.sendRefereeAudio( oobMsg );
             resetField();
         }
         else if ( M_take_time >= TURNOVER_TIME )
         {
-            logEpisode( "t" );
-            M_stadium.sendRefereeAudio( trainingMsg );
+            logEpisode( capturedMsg );
+            M_stadium.sendRefereeAudio( capturedMsg );
+            resetField();
+        }
+        else if ( ( ! M_stadium.ballCatcher()
+                || M_stadium.ballCatcher()->side() == RIGHT )
+              && crossGoalLine( RIGHT, M_prev_ball_pos )
+              && ! isPenaltyShootOut( M_stadium.playmode() )  )
+        {
+            logEpisode( goalMsg );
+            M_stadium.sendRefereeAudio( goalMsg );
+            resetField();
+        }
+        else if ( M_untouched_time > ServerParam::instance().hfoMaxUntouchedTime() ||
+                  M_stadium.time() - M_time >  ServerParam::instance().hfoMaxTrialTime())
+        {
+            logEpisode( ootMsg );
+            M_stadium.sendRefereeAudio( ootMsg );
             resetField();
         }
         else
         {
+            M_untouched_time++;
             bool keeper_poss = false;
 
             const Stadium::PlayerCont::const_iterator end = M_stadium.players().end();
@@ -2986,6 +3010,7 @@ HFORef::analyse()
                 if ( ppos.distance2( M_stadium.ball().pos() )
                      < std::pow( ServerParam::instance().kickableArea(), 2 ) )
                 {
+                    M_untouched_time = 0;
                     if ( (*p)->side() == LEFT )
                     {
                         keeper_poss = true;
@@ -2998,7 +3023,6 @@ HFORef::analyse()
                     }
                 }
             }
-
             if ( keeper_poss )
             {
                 M_take_time = 0;
@@ -3012,12 +3036,13 @@ HFORef::analyse()
             M_stadium.changePlayMode( PM_PlayOn );
         }
     }
+    M_prev_ball_pos = M_stadium.ball().pos();
 }
 
 void
 HFORef::playModeChange( PlayMode pm )
 {
-    if ( ServerParam::instance().keepAwayMode() )
+    if ( ServerParam::instance().HFOMode() )
     {
         if ( pm == PM_PlayOn && M_episode == 0 )
         {
@@ -3032,11 +3057,11 @@ HFORef::playModeChange( PlayMode pm )
 
                 if ( (*p)->side() == LEFT )
                 {
-                    ++M_keepers;
+                    ++M_offense;
                 }
                 else if ( (*p)->side() == RIGHT )
                 {
-                    ++M_takers;
+                    ++M_defense;
                 }
             }
 
@@ -3050,8 +3075,9 @@ bool
 HFORef::ballInHFOArea()
 {
     PVector ball_pos = M_stadium.ball().pos();
-    return ( std::fabs( ball_pos.x ) < ServerParam::instance().keepAwayLength() * 0.5
-             && std::fabs( ball_pos.y ) < ServerParam::instance().keepAwayWidth() * 0.5 );
+    return ( ball_pos.x >= -0.1 &&
+             ball_pos.x <= 0.5 * ServerParam::instance().PITCH_LENGTH &&
+             std::fabs( ball_pos.y ) <= 0.5 * ServerParam::instance().PITCH_WIDTH);
 }
 
 void
@@ -3059,20 +3085,21 @@ HFORef::logHeader()
 {
     if ( M_stadium.logger().kawayLog() )
     {
-        M_stadium.logger().kawayLog() << "# Keepers: " << M_keepers << '\n'
-                                      << "# Takers:  " << M_takers << '\n'
-                                      << "# Region:  " << ServerParam::instance().keepAwayLength()
-                                      << " x " << ServerParam::instance().keepAwayWidth()
-                                      << '\n'
-                                      << "#\n"
-                                      << "# Description of Fields:\n"
-                                      << "# 1) Episode number\n"
-                                      << "# 2) Start time in simulator steps (100ms)\n"
-                                      << "# 3) End time in simulator steps (100ms)\n"
-                                      << "# 4) Duration in simulator steps (100ms)\n"
-                                      << "# 5) (o)ut of bounds / (t)aken away\n"
-                                      << "#\n"
-                                      << std::flush;
+        M_stadium.logger().kawayLog()
+            << "# Offense: " << M_offense << '\n'
+            << "# Defense:  " << M_defense << '\n'
+            << "# Region:  " << ServerParam::instance().keepAwayLength()
+            << " x " << ServerParam::instance().keepAwayWidth()
+            << '\n'
+            << "#\n"
+            << "# Description of Fields:\n"
+            << "# 1) Episode number\n"
+            << "# 2) Start time in simulator steps (100ms)\n"
+            << "# 3) End time in simulator steps (100ms)\n"
+            << "# 4) Duration in simulator steps (100ms)\n"
+            << "# 5) (o)ut of bounds / (t)aken away\n"
+            << "#\n"
+            << std::flush;
     }
 }
 
@@ -3095,55 +3122,43 @@ HFORef::logEpisode( const char * endCond )
 void
 HFORef::resetField()
 {
-    int keeper_pos = irand( M_keepers );
-    //int keeper_pos = boost::uniform_smallint<>( 0, M_keepers - 1 )( rcss::random::DefaultRNG::instance() );
-
+    double pitch_length = ServerParam::instance().PITCH_LENGTH;
+    double pitch_width = ServerParam::instance().PITCH_WIDTH;
+    double ball_x = drand(.2 * -.1 + .05 * pitch_length, .15 * pitch_length);
+    double ball_y = drand(-.4 * pitch_width, .4 * pitch_width);
+    M_stadium.placeBall( NEUTRAL, PVector(ball_x, ball_y) );
+    int offense_pos = 0;
+    float offset_x[10] = {-1, -1, 1, 1, 0, 0, -2, -2, 2, 2};
+    float offset_y[10] = {-1, 1, 1, -1, 2, -2, -2, 2, 2, -2};
     const Stadium::PlayerCont::iterator end = M_stadium.players().end();
     for ( Stadium::PlayerCont::iterator p = M_stadium.players().begin();
           p != end;
           ++p )
     {
         if ( ! (*p)->isEnabled() ) continue;
-
         double x, y;
         if ( (*p)->side() == LEFT )
         {
-            switch( keeper_pos ) {
-            case 0:
-                x = -ServerParam::instance().keepAwayLength() * 0.5 + drand( 0, 3 );
-                y = -ServerParam::instance().keepAwayWidth() * 0.5 + drand( 0, 3 );
-                break;
-            case 1:
-                x = ServerParam::instance().keepAwayLength() * 0.5 - drand( 0, 3 );
-                y = -ServerParam::instance().keepAwayWidth() * 0.5 + drand( 0, 3 );
-                break;
-            case 2:
-                x = ServerParam::instance().keepAwayLength() * 0.5 - drand( 0, 3 );
-                y = ServerParam::instance().keepAwayWidth() * 0.5 - drand( 0, 3 );
-                break;
-            default:
-                x = drand( -1, 1 ); y = drand( -1, 1 );
-                break;
-            }
-
+            x = ball_x + .1 * pitch_length * (drand(0,1) + offset_x[offense_pos]);
+            y = ball_y + .1 * pitch_length * (drand(0,1) + offset_y[offense_pos]);
+            x = std::min(std::max(x, -.1), .5 * pitch_length);
+            y = std::min(std::max(y, -.5 * pitch_width), .5 * pitch_width);
             (*p)->place( PVector( x, y ) );
-
-            keeper_pos = ( keeper_pos + 1 ) % M_keepers;
+            offense_pos++;
         }
         else if ( (*p)->side() == RIGHT )
         {
-            x = -ServerParam::instance().keepAwayLength() * 0.5 + drand( 0, 3 );
-            y = ServerParam::instance().keepAwayWidth() * 0.5 - drand( 0, 3 );
-
+            if ( (*p)->isGoalie() ) {
+                x = .5 * pitch_length;
+                y = 0;
+            } else {
+                x = drand(.25 * pitch_length, .375 * pitch_length);
+                y = drand(-.8 * pitch_width, .8 * pitch_width);
+            }
             (*p)->place( PVector( x, y ) );
         }
     }
-
-    M_stadium.placeBall( NEUTRAL,
-                         PVector( -ServerParam::instance().keepAwayLength() * 0.5 + 4.0,
-                                  -ServerParam::instance().keepAwayWidth() * 0.5 + 4.0 ) );
     M_stadium.recoveryPlayers();
-
     M_take_time = 0;
 }
 

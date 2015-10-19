@@ -1118,7 +1118,7 @@ Stadium::kickOff()
 {
     const ServerParam & SP = ServerParam::instance();
 
-    if ( SP.keepAwayMode() )
+    if ( SP.keepAwayMode() || SP.HFOMode() )
     {
         changePlayMode( PM_PlayOn );
         return;
