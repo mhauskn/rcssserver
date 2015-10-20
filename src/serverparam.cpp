@@ -853,6 +853,8 @@ ServerParam::addParams()
     addParam( "hfo_log_fixed_name", M_hfo_log_fixed_name, "", 9 );
     addParam( "hfo_log_fixed", M_hfo_log_fixed, "", 9 );
     addParam( "hfo_log_dated", M_hfo_log_dated, "", 9 );
+    addParam( "hfo_max_trials", M_hfo_max_trials, "", 9 );
+    addParam( "hfo_max_frames", M_hfo_max_frames, "", 9 );
 
     addParam( "nr_normal_halfs",
               rcss::conf::makeSetter( this, &ServerParam::setNrNormalHalfs ),
@@ -1207,6 +1209,8 @@ ServerParam::setDefaults()
     M_hfo = false;
     M_hfo_max_trial_time = 1000;
     M_hfo_max_untouched_time = 100;
+    M_hfo_max_trials = -1;
+    M_hfo_max_frames = -1;
 
     M_corner_kick_margin = CORNER_KICK_MARGIN;
     M_offside_active_area_size = OFFSIDE_ACTIVE_AREA_SIZE;

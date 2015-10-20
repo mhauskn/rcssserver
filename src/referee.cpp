@@ -50,6 +50,7 @@ const char * HFORef::oobMsg = "OUT_OF_BOUNDS";
 const char * HFORef::capturedMsg = "CAPTURED_BY_DEFENSE";
 const char * HFORef::goalMsg = "GOAL";
 const char * HFORef::ootMsg = "OUT_OF_TIME";
+const char * HFORef::doneMsg = "HFO_FINISHED";
 const int HFORef::TURNOVER_TIME = 2;
 
 PVector
@@ -3005,9 +3006,18 @@ HFORef::HFORef( Stadium & stadium )
 void
 HFORef::analyse()
 {
-    if ( ! ServerParam::instance().hfoMode() )
+    const ServerParam & param = ServerParam::instance();
+
+    if ( ! param.hfoMode() )
     {
         return;
+    }
+
+    if ( (param.hfoMaxTrials() > 0 && M_episode > param.hfoMaxTrials()) ||
+         (param.hfoMaxFrames() > 0 && M_stadium.time() > param.hfoMaxFrames()) )
+    {
+        M_stadium.sendRefereeAudio( doneMsg );
+        M_stadium.finalize("HFO complete");
     }
 
     // Resets the episode after waiting for one frame
@@ -3041,8 +3051,8 @@ HFORef::analyse()
             M_stadium.sendRefereeAudio( capturedMsg );
             M_episode_over_time = M_stadium.time();
         }
-        else if ( M_untouched_time > ServerParam::instance().hfoMaxUntouchedTime() ||
-                  M_stadium.time() - M_time >  ServerParam::instance().hfoMaxTrialTime())
+        else if ( M_untouched_time > param.hfoMaxUntouchedTime() ||
+                  M_stadium.time() - M_time > param.hfoMaxTrialTime())
         {
             logEpisode( ootMsg );
             M_stadium.sendRefereeAudio( ootMsg );
@@ -3152,7 +3162,7 @@ HFORef::logEpisode( const char * endCond )
 {
     if ( M_stadium.logger().hfoLog() )
     {
-        M_stadium.logger().hfoLog() << M_episode++ << "\t"
+        M_stadium.logger().hfoLog() << M_episode << "\t"
                                     << M_time << "\t"
                                     << M_stadium.time() << "\t"
                                     << M_stadium.time() - M_time << "\t"

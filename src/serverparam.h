@@ -422,6 +422,8 @@ private:
     bool M_hfo; /* HFO mode on/off */
     int M_hfo_max_trial_time; /* Max time an HFO trial can last */
     int M_hfo_max_untouched_time; /* Max time ball can go untouched in HFO */
+    int M_hfo_max_trials; /* Quit after this many HFO trials */
+    int M_hfo_max_frames; /* Quit after this many HFO frames */
     int M_port; /* port number */
     int M_coach_port; /* coach port number */
     int M_olcoach_port; /* online coach port number */
@@ -762,6 +764,8 @@ public:
     bool hfoMode() const { return M_hfo; }
     int hfoMaxTrialTime() const { return M_hfo_max_trial_time; }
     int hfoMaxUntouchedTime() const { return M_hfo_max_untouched_time; }
+    int hfoMaxTrials() const { return M_hfo_max_trials; }
+    int hfoMaxFrames() const { return M_hfo_max_frames; }
 
     double cornerKickMargin() const { return M_corner_kick_margin; }
     double offsideActiveArea() const { return M_offside_active_area_size; }

@@ -679,6 +679,7 @@ private:
     static const char * capturedMsg;
     static const char * goalMsg;
     static const char * ootMsg;
+    static const char * doneMsg;
     static const int TURNOVER_TIME;
     int M_episode;
     int M_offense, M_defense;
