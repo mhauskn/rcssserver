@@ -3192,6 +3192,12 @@ HFORef::resetField()
         double x, y;
         if ( (*p)->side() == LEFT )
         {
+            if (ServerParam::instance().hfoOffenseOnBall() && offense_pos == 0 )
+            {
+                (*p)->place( PVector( ball_x - .1, ball_y ) );
+                offense_pos++;
+                continue;
+            }
             x = ball_x + .1 * pitch_length * (drand(0,1) + offset_x[offense_pos]);
             y = ball_y + .1 * pitch_length * (drand(0,1) + offset_y[offense_pos]);
             x = std::min(std::max(x, -.1), .5 * pitch_length);
