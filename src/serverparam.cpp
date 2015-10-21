@@ -933,7 +933,7 @@ ServerParam::addParams()
               "", 15 );
 
     // XXX
-    // addParam( "random_seed", M_random_seed, "", 999 );
+    addParam( "random_seed", M_random_seed, "", 15 );
     // addParam( "long_kick_power_factor", M_long_kick_power_factor, "", 999 );
     // addParam( "long_kick_delay", M_long_kick_delay, "", 999 );
 }
