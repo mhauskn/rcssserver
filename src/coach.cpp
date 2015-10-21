@@ -342,6 +342,23 @@ Coach::parse_command( const char * command )
 
         return;
     }
+    else if ( ! std::strcmp( com, "disconnect_player" ) )
+    {
+        char name[128];
+        int unum;
+
+        if ( std::sscanf( command, " ( disconnect_player %127s %d ) ",
+                          name, &unum ) == 2 )
+        {
+            disconnect_player( name, unum );
+        }
+        else
+        {
+            send( "(error illegal_command_form)" );
+        }
+
+        return;
+    }
     //pfr:SYNCH
     else if ( ! std::strcmp( com, "done" ) )
     {
@@ -940,7 +957,45 @@ Coach::check_ball()
     send( ost.str().c_str() );
 }
 
+void
+Coach::disconnect_player( const std::string & team_name, int unum )
+{
+    const Team * team = NULL;
+    if ( M_stadium.teamLeft().name() == team_name )
+    {
+        team = &( M_stadium.teamLeft() );
+    }
 
+    if ( M_stadium.teamRight().name() == team_name )
+    {
+        team = &( M_stadium.teamRight() );
+    }
+
+    if ( team == NULL )
+    {
+        send( "(warning no_team_found)" );
+        return;
+    }
+
+    const Player * player = NULL;
+    for ( int i = 0; i < team->size(); ++i )
+    {
+        const Player * p = team->player( i );
+        if ( p && p->unum() == unum )
+        {
+            player = p;
+            break;
+        }
+    }
+
+    if ( player == NULL )
+    {
+        send( "(warning no_such_player)" );
+        return;
+    }
+
+    M_stadium.discardPlayer(player->side(), player->unum());
+}
 
 OnlineCoach::OnlineCoach( Stadium & stadium,
                           Team & team )
