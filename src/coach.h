@@ -138,6 +138,9 @@ private:
     void change_player_type_goalie( const std::string & team_name,
                                     int unum );
 
+    void disconnect_player( const std::string & team_name,
+                            int unum );
+
 protected:
     void check_ball();
     void look();

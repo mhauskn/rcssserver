@@ -88,6 +88,8 @@ const std::string Logger::DEF_GAME_NAME = "incomplete";
 const std::string Logger::DEF_GAME_SUFFIX = ".rcg";
 const std::string Logger::DEF_KAWAY_NAME = "incomplete";
 const std::string Logger::DEF_KAWAY_SUFFIX = ".kwy";
+const std::string Logger::DEF_HFO_NAME = "incomplete";
+const std::string Logger::DEF_HFO_SUFFIX = ".hfo";
 
 
 Logger::Logger( Stadium & stadium )
@@ -200,6 +202,15 @@ Logger::open()
         {
             return false;
         }
+    }
+
+    if ( ServerParam::instance().hfoMode()
+         && ServerParam::instance().hfoLogging() )
+    {
+      if ( ! openHFOLog() )
+      {
+        return false;
+      }
     }
 
     return true;
@@ -446,6 +457,62 @@ Logger::openKawayLog()
     return true;
 }
 
+bool
+Logger::openHFOLog()
+{
+    // create the log directory & file path string
+    try
+    {
+        boost::filesystem::path hfo_log( ServerParam::instance().hfoLogDir()
+#if defined(BOOST_FILESYSTEM_VERSION) && BOOST_FILESYSTEM_VERSION == 2
+#  ifndef BOOST_FILESYSTEM_NO_DEPRECATED
+                                           , &boost::filesystem::native
+#  endif
+#endif
+                                           );
+        if ( ! boost::filesystem::exists( hfo_log )
+             && ! boost::filesystem::create_directories( hfo_log ) )
+        {
+            std::cerr << __FILE__ << ": " << __LINE__
+                      << ": can't create keepaway log directory '"
+                      << hfo_log.BOOST_FS_DIRECTORY_STRING() << "'" << std::endl;
+            return false;
+        }
+
+        if ( ServerParam::instance().hfoLogFixed() )
+        {
+            hfo_log /= ServerParam::instance().hfoLogFixedName() + Logger::DEF_HFO_SUFFIX;
+        }
+        else
+        {
+            hfo_log /= Logger::DEF_HFO_NAME + Logger::DEF_HFO_SUFFIX;
+        }
+
+        M_hfo_log_name = hfo_log.BOOST_FS_FILE_STRING();
+    }
+    catch ( std::exception & e )
+    {
+        std::cerr << __FILE__ << ": " << __LINE__
+                  << " Exception caught! " << e.what()
+                  << "\nCould not create keepaway log directory '"
+                  << ServerParam::instance().hfoLogDir()
+                  << "'" << std::endl;
+        return false;
+    }
+
+    // open the output file stream
+    M_hfo_log.open( M_hfo_log_name.c_str() );
+
+    if ( ! M_hfo_log.is_open() )
+    {
+        std::cerr << __FILE__ << ": " << __LINE__
+                  << ": can't open keepaway_log_file " << M_hfo_log_name
+                  << std::endl;
+        return false;
+    }
+
+    return true;
+}
 
 void
 Logger::closeGameLog()
@@ -476,6 +543,16 @@ Logger::closeKawayLog()
     {
         M_kaway_log.flush();
         M_kaway_log.close();
+    }
+}
+
+void
+Logger::closeHFOLog()
+{
+    if ( M_hfo_log.is_open() )
+    {
+        M_hfo_log.flush();
+        M_hfo_log.close();
     }
 }
 
