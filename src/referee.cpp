@@ -3058,8 +3058,8 @@ HFORef::analyse()
             M_stadium.sendRefereeAudio( capturedMsg );
             M_episode_over_time = M_stadium.time();
         }
-        else if ( M_untouched_time > param.hfoMaxUntouchedTime() ||
-                  M_stadium.time() - M_time > param.hfoMaxTrialTime())
+        else if ( (param.hfoMaxUntouchedTime() > 0 && M_untouched_time > param.hfoMaxUntouchedTime()) ||
+                  (param.hfoMaxTrialTime() > 0 && M_stadium.time() - M_time > param.hfoMaxTrialTime()) )
         {
             logEpisode( ootMsg );
             M_stadium.sendRefereeAudio( ootMsg );
