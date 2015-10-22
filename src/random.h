@@ -120,4 +120,16 @@ drand( double low, double high )
     return gen();
 }
 
+static inline
+double
+drand( double low, double high, boost::mt19937& generator )
+{
+    if ( low > high ) std::swap( low, high );
+    if ( high - low < 1.0e-10 ) return (low + high) * 0.5;
+    boost::uniform_real<> rng( low, high );
+    boost::variate_generator< boost::mt19937&, boost::uniform_real<> >
+      gen( generator, rng );
+    return gen();
+}
+
 #endif

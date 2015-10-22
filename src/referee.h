@@ -29,6 +29,8 @@
 #include "types.h"
 #include "object.h"
 
+#include <boost/random.hpp>
+
 #include <set>
 #include <vector>
 
@@ -688,6 +690,8 @@ private:
     PVector M_prev_ball_pos;
     int M_untouched_time;
     int M_episode_over_time;
+    boost::mt19937 M_rng;
+    std::vector<std::pair<int,int> > M_offsets;
 public:
     HFORef( Stadium & stadium );
 

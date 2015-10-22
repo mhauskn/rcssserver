@@ -2998,9 +2998,16 @@ HFORef::HFORef( Stadium & stadium )
       M_take_time( 0 ),
       M_prev_ball_pos( 0.0, 0.0 ),
       M_untouched_time( 0 ),
-      M_episode_over_time( -1 )
+      M_episode_over_time( -1 ),
+      M_rng()
 {
-
+    // Generate vector of offsets used when resetting the field.
+    float offset_x[10] = {-1, -1, 1, 1, 0, 0, -2, -2, 2, 2};
+    float offset_y[10] = {-1, 1, 1, -1, 2, -2, -2, 2, 2, -2};
+    for (int i = 0; i < 10; ++i)
+    {
+        M_offsets.push_back(std::make_pair(offset_x[i], offset_y[i]));
+    }
 }
 
 void
@@ -3106,6 +3113,19 @@ HFORef::playModeChange( PlayMode pm )
       {
         if ( M_episode == 0 )
         {
+          // Seed the RNG needed to reset the field
+          if ( ServerParam::instance().randomSeed() >= 0 )
+          {
+            int seed = ServerParam::instance().randomSeed();
+            std::cout << "HFORef using seed: " << seed << std::endl;
+            M_rng.seed(seed);
+          }
+          else
+          {
+            int seed = irand(RAND_MAX);
+            std::cout << "HFORef using Random Seed: " << seed << std::endl;
+            M_rng.seed(123);
+          }
           const Stadium::PlayerCont::const_iterator end = M_stadium.players().end();
           for ( Stadium::PlayerCont::const_iterator p = M_stadium.players().begin();
                 p != end;
@@ -3176,13 +3196,14 @@ HFORef::resetField()
 {
     double pitch_length = ServerParam::instance().PITCH_LENGTH;
     double pitch_width = ServerParam::instance().PITCH_WIDTH;
-    double ball_x = drand(.2 * -.1 + .05 * pitch_length, .15 * pitch_length);
-    double ball_y = drand(-.4 * pitch_width, .4 * pitch_width);
+    double ball_x = drand(.2 * -.1 + .05 * pitch_length, .15 * pitch_length, M_rng);
+    double ball_y = drand(-.4 * pitch_width, .4 * pitch_width, M_rng);
     M_stadium.placeBall( NEUTRAL, PVector(ball_x, ball_y) );
     M_prev_ball_pos = M_stadium.ball().pos();
+    boost::variate_generator<boost::mt19937&, boost::uniform_int<> >
+        gen(M_rng, boost::uniform_int<>());
+    std::random_shuffle( M_offsets.begin(), M_offsets.end(), gen);
     int offense_pos = 0;
-    float offset_x[10] = {-1, -1, 1, 1, 0, 0, -2, -2, 2, 2};
-    float offset_y[10] = {-1, 1, 1, -1, 2, -2, -2, 2, 2, -2};
     const Stadium::PlayerCont::iterator end = M_stadium.players().end();
     for ( Stadium::PlayerCont::iterator p = M_stadium.players().begin();
           p != end;
@@ -3198,8 +3219,9 @@ HFORef::resetField()
                 offense_pos++;
                 continue;
             }
-            x = ball_x + .1 * pitch_length * (drand(0,1) + offset_x[offense_pos]);
-            y = ball_y + .1 * pitch_length * (drand(0,1) + offset_y[offense_pos]);
+            std::pair<int,int> offset = M_offsets[offense_pos];
+            x = ball_x + .1 * pitch_length * (drand(0,1,M_rng) + offset.first);
+            y = ball_y + .1 * pitch_length * (drand(0,1,M_rng) + offset.second);
             x = std::min(std::max(x, -.1), .5 * pitch_length);
             y = std::min(std::max(y, -.5 * pitch_width), .5 * pitch_width);
             (*p)->place( PVector( x, y ) );
@@ -3211,8 +3233,8 @@ HFORef::resetField()
                 x = .5 * pitch_length;
                 y = 0;
             } else {
-                x = drand(.25 * pitch_length, .375 * pitch_length);
-                y = drand(-.4 * pitch_width, .4 * pitch_width);
+                x = drand(.25 * pitch_length, .375 * pitch_length, M_rng);
+                y = drand(-.4 * pitch_width, .4 * pitch_width, M_rng);
             }
             (*p)->place( PVector( x, y ) );
         }
