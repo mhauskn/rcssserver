@@ -3203,8 +3203,31 @@ HFORef::resetField()
     boost::variate_generator<boost::mt19937&, boost::uniform_int<> >
         gen(M_rng, boost::uniform_int<>());
     std::random_shuffle( M_offsets.begin(), M_offsets.end(), gen);
-    int offense_pos = 0;
+    int offense_pos_on_ball = -1;
+    int offense_count = 0;
+    int hfo_offense_on_ball = ServerParam::instance().hfoOffenseOnBall();
     const Stadium::PlayerCont::iterator end = M_stadium.players().end();
+    if( hfo_offense_on_ball > 0 )
+    {
+        for ( Stadium::PlayerCont::iterator p = M_stadium.players().begin();
+              p != end;
+              ++p )
+        {
+    	    if ( (*p)->isEnabled() && (*p)->side() == LEFT )
+    	    {
+    		offense_count++;
+    	    }
+      	}
+      	if ( ( hfo_offense_on_ball - offense_count ) > 0 )
+      	{
+      	    offense_pos_on_ball = (int)(drand(0,1,M_rng) * (offense_count));
+      	}
+      	else
+      	{
+      	    offense_pos_on_ball = hfo_offense_on_ball - 1;
+      	}
+    }
+    int offense_pos = 0;
     for ( Stadium::PlayerCont::iterator p = M_stadium.players().begin();
           p != end;
           ++p )
@@ -3213,7 +3236,7 @@ HFORef::resetField()
         double x, y;
         if ( (*p)->side() == LEFT )
         {
-            if (ServerParam::instance().hfoOffenseOnBall() && offense_pos == 0 )
+            if ( offense_pos_on_ball == offense_pos )
             {
                 (*p)->place( PVector( ball_x - .1, ball_y ) );
                 offense_pos++;
