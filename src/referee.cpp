@@ -3218,9 +3218,9 @@ HFORef::resetField()
     		offense_count++;
     	    }
       	}
-      	if ( ( hfo_offense_on_ball - offense_count ) > 0 )
+      	if ( hfo_offense_on_ball > offense_count )
       	{
-      	    offense_pos_on_ball = (int)(drand(0,1,M_rng) * (offense_count));
+      	    offense_pos_on_ball = irand(offense_count);
       	}
       	else
       	{
