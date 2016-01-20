@@ -3200,15 +3200,38 @@ HFORef::resetField()
 {
     double pitch_length = ServerParam::instance().PITCH_LENGTH;
     double pitch_width = ServerParam::instance().PITCH_WIDTH;
-    double ball_x = drand(.2 * -.1 + .05 * pitch_length, .15 * pitch_length, M_rng);
+    double ball_x = drand(0, .1 * pitch_length, M_rng);
     double ball_y = drand(-.4 * pitch_width, .4 * pitch_width, M_rng);
     M_stadium.placeBall( NEUTRAL, PVector(ball_x, ball_y) );
     M_prev_ball_pos = M_stadium.ball().pos();
     boost::variate_generator<boost::mt19937&, boost::uniform_int<> >
         gen(M_rng, boost::uniform_int<>());
     std::random_shuffle( M_offsets.begin(), M_offsets.end(), gen);
-    int offense_pos = 0;
+    int offense_pos_on_ball = -1;
+    int offense_count = 0;
+    int hfo_offense_on_ball = ServerParam::instance().hfoOffenseOnBall();
     const Stadium::PlayerCont::iterator end = M_stadium.players().end();
+    if( hfo_offense_on_ball > 0 )
+    {
+        for ( Stadium::PlayerCont::iterator p = M_stadium.players().begin();
+              p != end;
+              ++p )
+        {
+    	    if ( (*p)->isEnabled() && (*p)->side() == LEFT )
+    	    {
+    		offense_count++;
+    	    }
+      	}
+      	if ( hfo_offense_on_ball > offense_count )
+      	{
+      	    offense_pos_on_ball = irand(offense_count);
+      	}
+      	else
+      	{
+      	    offense_pos_on_ball = hfo_offense_on_ball - 1;
+      	}
+    }
+    int offense_pos = 0;
     for ( Stadium::PlayerCont::iterator p = M_stadium.players().begin();
           p != end;
           ++p )
@@ -3217,7 +3240,7 @@ HFORef::resetField()
         double x, y;
         if ( (*p)->side() == LEFT )
         {
-            if (ServerParam::instance().hfoOffenseOnBall() && offense_pos == 0 )
+            if ( offense_pos_on_ball == offense_pos )
             {
                 (*p)->place( PVector( ball_x - .1, ball_y ) );
                 offense_pos++;
@@ -3226,8 +3249,8 @@ HFORef::resetField()
             std::pair<int,int> offset = M_offsets[offense_pos];
             x = ball_x + .1 * pitch_length * (drand(0,1,M_rng) + offset.first);
             y = ball_y + .1 * pitch_length * (drand(0,1,M_rng) + offset.second);
-            x = std::min(std::max(x, -.1), .5 * pitch_length);
-            y = std::min(std::max(y, -.5 * pitch_width), .5 * pitch_width);
+            x = std::min(std::max(x, -.1), .2 * pitch_length);
+            y = std::min(std::max(y, -.4 * pitch_width), .4 * pitch_width);
             (*p)->place( PVector( x, y ) );
             offense_pos++;
         }
@@ -3237,7 +3260,7 @@ HFORef::resetField()
                 x = .5 * pitch_length;
                 y = 0;
             } else {
-                x = drand(.25 * pitch_length, .375 * pitch_length, M_rng);
+                x = drand(.4 * pitch_length, .5 * pitch_length, M_rng);
                 y = drand(-.4 * pitch_width, .4 * pitch_width, M_rng);
             }
             (*p)->place( PVector( x, y ) );
