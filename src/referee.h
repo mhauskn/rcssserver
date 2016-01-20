@@ -687,6 +687,7 @@ private:
     int M_offense, M_defense;
     int M_time;
     int M_take_time;
+    int M_taker_unum;
     PVector M_prev_ball_pos;
     int M_untouched_time;
     int M_episode_over_time;

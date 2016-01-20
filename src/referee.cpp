@@ -2996,6 +2996,7 @@ HFORef::HFORef( Stadium & stadium )
       M_defense( 0 ),
       M_time( 0 ),
       M_take_time( 0 ),
+      M_taker_unum(-1),
       M_prev_ball_pos( 0.0, 0.0 ),
       M_untouched_time( 0 ),
       M_episode_over_time( -1 ),
@@ -3054,8 +3055,10 @@ HFORef::analyse()
         }
         else if ( M_take_time >= TURNOVER_TIME )
         {
-            logEpisode( capturedMsg );
-            M_stadium.sendRefereeAudio( capturedMsg );
+            char capMsg[32];
+            sprintf(capMsg, "%s-%d", capturedMsg, M_taker_unum);
+            logEpisode(capMsg);
+            M_stadium.sendRefereeAudio(capMsg);
             M_episode_over_time = M_stadium.time();
         }
         else if ( (param.hfoMaxUntouchedTime() > 0 && M_untouched_time > param.hfoMaxUntouchedTime()) ||
@@ -3091,6 +3094,7 @@ HFORef::analyse()
                     {
                         offense_poss = false;
                         ++M_take_time;
+                        M_taker_unum = (*p)->unum();
                         break;
                     }
                 }
@@ -3248,8 +3252,10 @@ HFORef::resetField()
 void
 HFORef::ballCaught( const Player & catcher )
 {
-    logEpisode( capturedMsg );
-    M_stadium.sendRefereeAudio( capturedMsg );
+    char capMsg[32];
+    sprintf(capMsg, "%s-%d", capturedMsg, catcher.unum());
+    logEpisode(capMsg);
+    M_stadium.sendRefereeAudio(capMsg);
     M_episode_over_time = M_stadium.time();
 }
 
