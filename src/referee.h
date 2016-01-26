@@ -689,7 +689,7 @@ private:
     int M_time;
     int M_take_time;
     int M_holder_unum;
-    char M_holder_side;
+    char M_holder_side;           // 'L' = left, 'R' = Right, 'U' = Unknown/Neutral
     PVector M_prev_ball_pos;
     int M_untouched_time;
     int M_episode_over_time;

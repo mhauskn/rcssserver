@@ -3112,7 +3112,8 @@ HFORef::analyse()
             }
 
             // Broadcast who has possession. Goalie catches are broadcast separately by the server. Rebroadcasting a message here would overwrite the other one. 
-            if (!(M_holder_side == 'R' && M_holder_unum == 1)){
+            bool goalie_has_ball = (M_holder_side == 'R' && M_holder_unum == 1);
+            if (!goalie_has_ball){
               char possessionMsg[32];
               sprintf(possessionMsg, "%s-%c%d", inGameMsg, M_holder_side, M_holder_unum);
               M_stadium.sendRefereeAudio(possessionMsg);
