@@ -51,6 +51,7 @@ const char * HFORef::capturedMsg = "CAPTURED_BY_DEFENSE";
 const char * HFORef::goalMsg = "GOAL";
 const char * HFORef::ootMsg = "OUT_OF_TIME";
 const char * HFORef::doneMsg = "HFO_FINISHED";
+const char * HFORef::inGameMsg = "IN_GAME";
 const int HFORef::TURNOVER_TIME = 2;
 
 PVector
@@ -2996,6 +2997,8 @@ HFORef::HFORef( Stadium & stadium )
       M_defense( 0 ),
       M_time( 0 ),
       M_take_time( 0 ),
+      M_holder_unum(-1),
+      M_holder_side('U'),
       M_prev_ball_pos( 0.0, 0.0 ),
       M_untouched_time( 0 ),
       M_episode_over_time( -1 ),
@@ -3042,8 +3045,10 @@ HFORef::analyse()
     {
         if ( crossGoalLine( RIGHT, M_prev_ball_pos ) )
         {
-            logEpisode( goalMsg );
-            M_stadium.sendRefereeAudio( goalMsg );
+            char gMsg[32];
+            sprintf(gMsg, "%s-%d", goalMsg, M_holder_unum);
+            logEpisode( gMsg );
+            M_stadium.sendRefereeAudio( gMsg );
             M_episode_over_time = M_stadium.time();
         }
         else if ( ! inHFOArea(M_prev_ball_pos) )
@@ -3054,8 +3059,10 @@ HFORef::analyse()
         }
         else if ( M_take_time >= TURNOVER_TIME )
         {
-            logEpisode( capturedMsg );
-            M_stadium.sendRefereeAudio( capturedMsg );
+            char capMsg[32];
+            sprintf(capMsg, "%s-%d", capturedMsg, M_holder_unum);
+            logEpisode(capMsg);
+            M_stadium.sendRefereeAudio(capMsg);
             M_episode_over_time = M_stadium.time();
         }
         else if ( (param.hfoMaxUntouchedTime() > 0 && M_untouched_time > param.hfoMaxUntouchedTime()) ||
@@ -3082,14 +3089,18 @@ HFORef::analyse()
                 if ( ppos.distance2( M_stadium.ball().pos() )
                      < std::pow( ServerParam::instance().kickableArea(), 2 ) )
                 {
+
+                    M_holder_unum = (*p)->unum();
                     M_untouched_time = 0;
                     if ( (*p)->side() == LEFT )
                     {
                         offense_poss = true;
+                        M_holder_side = 'L';
                     }
                     else if ( (*p)->side() == RIGHT )
                     {
                         offense_poss = false;
+                        M_holder_side = 'R';
                         ++M_take_time;
                         break;
                     }
@@ -3099,6 +3110,15 @@ HFORef::analyse()
             {
                 M_take_time = 0;
             }
+
+            // Broadcast who has possession. Goalie catches are broadcast separately by the server. Rebroadcasting a message here would overwrite the other one. 
+            bool goalie_has_ball = (M_holder_side == 'R' && M_holder_unum == 1);
+            if (!goalie_has_ball){
+              char possessionMsg[32];
+              sprintf(possessionMsg, "%s-%c%d", inGameMsg, M_holder_side, M_holder_unum);
+              M_stadium.sendRefereeAudio(possessionMsg);
+            }
+
         }
     }
     M_prev_ball_pos = M_stadium.ball().pos();
@@ -3265,14 +3285,18 @@ HFORef::resetField()
     M_stadium.recoveryPlayers();
     M_take_time = 0;
     M_untouched_time = 0;
+    M_holder_side = 'U';
+    M_holder_unum = -1;
     M_time = M_stadium.time();
 }
 
 void
 HFORef::ballCaught( const Player & catcher )
 {
-    logEpisode( capturedMsg );
-    M_stadium.sendRefereeAudio( capturedMsg );
+    char capMsg[32];
+    sprintf(capMsg, "%s-%d", capturedMsg, catcher.unum());
+    logEpisode(capMsg);
+    M_stadium.sendRefereeAudio(capMsg);
     M_episode_over_time = M_stadium.time();
 }
 
