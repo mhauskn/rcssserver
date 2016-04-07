@@ -3111,7 +3111,9 @@ HFORef::analyse()
                 M_take_time = 0;
             }
 
-            // Broadcast who has possession. Goalie catches are broadcast separately by the server. Rebroadcasting a message here would overwrite the other one. 
+            // Broadcast who has possession. Goalie catches are
+            // broadcast separately by the server. Rebroadcasting a
+            // message here would overwrite the other one.
             bool goalie_has_ball = (M_holder_side == 'R' && M_holder_unum == 1);
             if (!goalie_has_ball){
               char possessionMsg[32];
@@ -3215,8 +3217,15 @@ void
 HFORef::resetField()
 {
     double pitch_length = ServerParam::instance().PITCH_LENGTH;
+    double half_pitch_length = 0.5 * pitch_length;
     double pitch_width = ServerParam::instance().PITCH_WIDTH;
-    double ball_x = drand(0, .1 * pitch_length, M_rng);
+    double min_ball_x =
+        std::max(std::min(ServerParam::instance().hfoMinBallX(), 1.), 0.);
+    double max_ball_x =
+        std::max(std::min(ServerParam::instance().hfoMaxBallX(), 1.), 0.);
+    max_ball_x = std::max(max_ball_x, min_ball_x);
+    double ball_x = drand(min_ball_x * half_pitch_length,
+                          max_ball_x * half_pitch_length, M_rng);
     double ball_y = drand(-.4 * pitch_width, .4 * pitch_width, M_rng);
     M_stadium.placeBall( NEUTRAL, PVector(ball_x, ball_y) );
     M_prev_ball_pos = M_stadium.ball().pos();
@@ -3233,19 +3242,19 @@ HFORef::resetField()
               p != end;
               ++p )
         {
-    	    if ( (*p)->isEnabled() && (*p)->side() == LEFT )
-    	    {
-    		offense_count++;
-    	    }
-      	}
-      	if ( hfo_offense_on_ball > offense_count )
-      	{
-      	    offense_pos_on_ball = irand(offense_count);
-      	}
-      	else
-      	{
-      	    offense_pos_on_ball = hfo_offense_on_ball - 1;
-      	}
+          if ( (*p)->isEnabled() && (*p)->side() == LEFT )
+          {
+            offense_count++;
+          }
+        }
+        if ( hfo_offense_on_ball > offense_count )
+        {
+          offense_pos_on_ball = irand(offense_count);
+        }
+        else
+        {
+          offense_pos_on_ball = hfo_offense_on_ball - 1;
+        }
     }
     int offense_pos = 0;
     for ( Stadium::PlayerCont::iterator p = M_stadium.players().begin();
@@ -3265,7 +3274,7 @@ HFORef::resetField()
             std::pair<int,int> offset = M_offsets[offense_pos];
             x = ball_x + .1 * pitch_length * (drand(0,1,M_rng) + offset.first);
             y = ball_y + .1 * pitch_length * (drand(0,1,M_rng) + offset.second);
-            x = std::min(std::max(x, -.1), .2 * pitch_length);
+            x = std::min(std::max(x, -.1), half_pitch_length);
             y = std::min(std::max(y, -.4 * pitch_width), .4 * pitch_width);
             (*p)->place( PVector( x, y ) );
             offense_pos++;
