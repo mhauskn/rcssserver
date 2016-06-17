@@ -3037,6 +3037,9 @@ HFORef::analyse()
         M_stadium.changePlayMode( PM_BeforeKickOff );
         M_stadium.changePlayMode( PM_PlayOn );
         M_episode_over_time = -1;
+        char possessionMsg[32];
+        sprintf(possessionMsg, "%s-%c%d", inGameMsg, M_holder_side, M_holder_unum);
+        M_stadium.sendRefereeAudio(possessionMsg);
       }
       return;
     }
@@ -3111,16 +3114,21 @@ HFORef::analyse()
                 M_take_time = 0;
             }
 
-            // Broadcast who has possession. Goalie catches are
-            // broadcast separately by the server. Rebroadcasting a
-            // message here would overwrite the other one.
             bool goalie_has_ball = (M_holder_side == 'R' && M_holder_unum == 1);
-            if (!goalie_has_ball){
-              char possessionMsg[32];
-              sprintf(possessionMsg, "%s-%c%d", inGameMsg, M_holder_side, M_holder_unum);
-              M_stadium.sendRefereeAudio(possessionMsg);
+            if (goalie_has_ball)
+            {
+                char capMsg[32];
+                sprintf(capMsg, "%s-%d", capturedMsg, M_holder_unum);
+                logEpisode(capMsg);
+                M_stadium.sendRefereeAudio(capMsg);
+                M_episode_over_time = M_stadium.time();
             }
-
+            else
+            {
+                char possessionMsg[32];
+                sprintf(possessionMsg, "%s-%c%d", inGameMsg, M_holder_side, M_holder_unum);
+                M_stadium.sendRefereeAudio(possessionMsg);
+            }
         }
     }
     M_prev_ball_pos = M_stadium.ball().pos();
@@ -3299,15 +3307,6 @@ HFORef::resetField()
     M_time = M_stadium.time();
 }
 
-void
-HFORef::ballCaught( const Player & catcher )
-{
-    char capMsg[32];
-    sprintf(capMsg, "%s-%d", capturedMsg, catcher.unum());
-    logEpisode(capMsg);
-    M_stadium.sendRefereeAudio(capMsg);
-    M_episode_over_time = M_stadium.time();
-}
 
 //************
 // PenaltyRef
