@@ -3028,6 +3028,7 @@ HFORef::analyse()
     {
         M_stadium.sendRefereeAudio( doneMsg );
         M_stadium.finalize("HFO complete");
+        return;
     }
 
     // Resets the episode after waiting for one frame
