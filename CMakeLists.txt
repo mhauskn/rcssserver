@@ -64,10 +64,10 @@ SET(awk_cmd "awk '/\#include <FlexLexer.h>/ { print \"\#include \\\"player_comma
 separate_arguments(awk_cmd)
 add_custom_command(OUTPUT ${SOURCE_DIR}/player_command_tok.cpp DEPENDS ${FLEX_player_command_tok_OUTPUTS} COMMAND ${awk_cmd})
 
-add_library(rcssconfparser SHARED ${BASE_CONF_SOURCES})
-add_library(rcssgz SHARED ${BASE_GZIP_SOURCES})
-add_library(rcssnet SHARED ${BASE_NET_SOURCES})
-add_library(rcssclangparser SHARED ${SOURCE_DIR}/coach_lang_tok.cpp ${LANGPARSER_SOURCES})
+add_library(rcssconfparser STATIC ${BASE_CONF_SOURCES})
+add_library(rcssgz STATIC ${BASE_GZIP_SOURCES})
+add_library(rcssnet STATIC ${BASE_NET_SOURCES})
+add_library(rcssclangparser STATIC ${SOURCE_DIR}/coach_lang_tok.cpp ${LANGPARSER_SOURCES})
 add_executable(rcssserver ${RCSSSERVER_SOURCES} ${SOURCE_DIR}/coach_lang_tok.cpp ${SOURCE_DIR}/player_command_tok.cpp)
 add_dependencies(rcssserver rcssconfparser rcssgz rcssclangparser)
 
