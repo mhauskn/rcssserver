@@ -6,6 +6,7 @@ os:
 compiler:
 - clang
 - gcc
+before_script:
+- sudo apt-get install libboost-system-dev libboost-filesystem-dev
 script:
-- cmake -DCMAKE_BUILD_TYPE=Release
-- make -j4
+- cmake -DCMAKE_BUILD_TYPE=Release && make -j4
