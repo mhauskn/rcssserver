@@ -2,6 +2,13 @@ sudo: false
 language: cpp
 # sudo: required
 dist: trusty
+addons:
+  apt:
+    sources:
+      - george-edison55-precise-backports # cmake 3.2.3 / doxygen 1.8.3
+    packages:
+      - cmake
+      - cmake-data
 os:
 - linux
 - osx
