@@ -1,6 +1,6 @@
 sudo: false
 language: cpp
-sudo: required
+# sudo: required
 dist: trusty
 os:
 - linux
@@ -8,7 +8,7 @@ os:
 compiler:
 - clang
 - gcc
-before_script:
-- sudo apt-get install libboost-system-dev libboost-filesystem-dev
+# before_script:
+# - sudo apt-get install libboost-system-dev libboost-filesystem-dev
 script:
 - cmake -DCMAKE_BUILD_TYPE=Release && make -j4
