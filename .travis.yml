@@ -1,6 +1,5 @@
 sudo: false
 language: cpp
-# sudo: required
 dist: trusty
 addons:
   apt:
@@ -12,14 +11,11 @@ addons:
       - cmake-data
       - libboost-system-dev
       - libboost-filesystem-dev
-#      - libboost1.55-all-dev
 os:
   - linux
   - osx
 compiler:
   - clang
   - gcc
-# before_script:
-# - sudo apt-get install libboost-system-dev libboost-filesystem-dev
 script:
   - cmake -DCMAKE_BUILD_TYPE=Release && make -j4
