@@ -10,7 +10,9 @@ addons:
     packages:
       - cmake
       - cmake-data
-      - libboost1.55-all-dev
+      - libboost-system-dev
+      - libboost-filesystem-dev
+#      - libboost1.55-all-dev
 os:
   - linux
   - osx
