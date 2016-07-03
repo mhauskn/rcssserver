@@ -5,17 +5,19 @@ dist: trusty
 addons:
   apt:
     sources:
+      - boost-latest
       - george-edison55-precise-backports # cmake 3.2.3 / doxygen 1.8.3
     packages:
       - cmake
       - cmake-data
+      - libboost1.55-all-dev
 os:
-- linux
-- osx
+  - linux
+  - osx
 compiler:
-- clang
-- gcc
+  - clang
+  - gcc
 # before_script:
 # - sudo apt-get install libboost-system-dev libboost-filesystem-dev
 script:
-- cmake -DCMAKE_BUILD_TYPE=Release && make -j4
+  - cmake -DCMAKE_BUILD_TYPE=Release && make -j4
