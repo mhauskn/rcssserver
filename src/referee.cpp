@@ -3155,7 +3155,7 @@ HFORef::playModeChange( PlayMode pm )
           {
             int seed = irand(RAND_MAX);
             std::cout << "HFORef using Random Seed: " << seed << std::endl;
-            M_rng.seed(123);
+            M_rng.seed(seed);
           }
           const Stadium::PlayerCont::const_iterator end = M_stadium.players().end();
           for ( Stadium::PlayerCont::const_iterator p = M_stadium.players().begin();
