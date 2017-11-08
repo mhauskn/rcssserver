@@ -3242,16 +3242,6 @@ HFORef::resetField()
     max_ball_y = std::max(max_ball_y, min_ball_y);
     double ball_y = drand(min_ball_y / 2.0 * pitch_width,
                           max_ball_y / 2.0 * pitch_width, M_rng);
-    M_stadium.logger().hfoLog() << ServerParam::instance().hfoMinBallY() << "\t"
-                                << min_ball_y << "\t"
-                                << ServerParam::instance().hfoMaxBallY() << "\t"
-                                << max_ball_y << "\t"
-                                << ball_y << std::endl;
-    // std::cout << min_ball_y << ", " << max_ball_y << ": " << ball_y << std::endl;
-    // std::cerr << min_ball_y << ", " << max_ball_y << ": " << ball_y << std::endl;
-    // std::clog << min_ball_y << ", " << max_ball_y << ": " << ball_y << std::endl;
-
-    // double ball_y = drand(-.4 * pitch_width, .4 * pitch_width, M_rng);
     M_stadium.placeBall( NEUTRAL, PVector(ball_x, ball_y) );
     M_prev_ball_pos = M_stadium.ball().pos();
     boost::variate_generator<boost::mt19937&, boost::uniform_int<> >
