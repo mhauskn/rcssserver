@@ -858,6 +858,8 @@ ServerParam::addParams()
     addParam( "hfo_offense_on_ball", M_hfo_offense_on_ball, "", 9 );
     addParam( "hfo_min_ball_pos_x", M_hfo_min_ball_pos_x, "", 9 );
     addParam( "hfo_max_ball_pos_x", M_hfo_max_ball_pos_x, "", 9 );
+    addParam( "hfo_min_ball_pos_y", M_hfo_min_ball_pos_y, "", 9 );
+    addParam( "hfo_max_ball_pos_y", M_hfo_max_ball_pos_y, "", 9 );
 
     addParam( "nr_normal_halfs",
               rcss::conf::makeSetter( this, &ServerParam::setNrNormalHalfs ),

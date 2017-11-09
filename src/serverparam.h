@@ -427,6 +427,8 @@ private:
     int M_hfo_offense_on_ball; /* Give the ball to an offensive player */
     double M_hfo_min_ball_pos_x; /* Governs the initialization x-position of ball */
     double M_hfo_max_ball_pos_x; /* Governs the initialization x-position of ball */
+    double M_hfo_min_ball_pos_y; /* Governs the initialization y-position of ball */
+    double M_hfo_max_ball_pos_y; /* Governs the initialization y-position of ball */
     int M_port; /* port number */
     int M_coach_port; /* coach port number */
     int M_olcoach_port; /* online coach port number */
@@ -772,6 +774,8 @@ public:
     int hfoOffenseOnBall() const { return M_hfo_offense_on_ball; }
     double hfoMinBallX() const { return M_hfo_min_ball_pos_x; }
     double hfoMaxBallX() const { return M_hfo_max_ball_pos_x; }
+    double hfoMinBallY() const { return M_hfo_min_ball_pos_y; }
+    double hfoMaxBallY() const { return M_hfo_max_ball_pos_y; }
 
     double cornerKickMargin() const { return M_corner_kick_margin; }
     double offsideActiveArea() const { return M_offside_active_area_size; }

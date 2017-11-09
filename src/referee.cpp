@@ -3235,7 +3235,13 @@ HFORef::resetField()
     max_ball_x = std::max(max_ball_x, min_ball_x);
     double ball_x = drand(min_ball_x * half_pitch_length,
                           max_ball_x * half_pitch_length, M_rng);
-    double ball_y = drand(-.4 * pitch_width, .4 * pitch_width, M_rng);
+    double min_ball_y =
+        std::max(std::min(ServerParam::instance().hfoMinBallY(), 1.), -1.);
+    double max_ball_y =
+        std::max(std::min(ServerParam::instance().hfoMaxBallY(), 1.), -1.);
+    max_ball_y = std::max(max_ball_y, min_ball_y);
+    double ball_y = drand(min_ball_y / 2.0 * pitch_width,
+                          max_ball_y / 2.0 * pitch_width, M_rng);
     M_stadium.placeBall( NEUTRAL, PVector(ball_x, ball_y) );
     M_prev_ball_pos = M_stadium.ball().pos();
     boost::variate_generator<boost::mt19937&, boost::uniform_int<> >
